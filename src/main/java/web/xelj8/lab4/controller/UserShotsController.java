@@ -4,50 +4,51 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import web.xelj8.lab4.http.requests.ShotCreateRequest;
-import web.xelj8.lab4.http.requests.ShotsGetRequest;
+import web.xelj8.lab4.http.requests.ShotDTO;
 import web.xelj8.lab4.http.resources.ShotResource;
 import web.xelj8.lab4.model.Shot;
 import web.xelj8.lab4.model.User;
 import web.xelj8.lab4.repository.ShotRepository;
 import web.xelj8.lab4.repository.UserRepository;
+import web.xelj8.lab4.security.UserPrincipal;
+import jakarta.ws.rs.core.SecurityContext;
+import jakarta.ws.rs.core.Context;
 
 import java.util.List;
 
 @Path("/my-shots")
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
 public class UserShotsController {
     @Inject
     private ShotRepository shotRepository;
+
     @Inject
     private UserRepository userRepository;
 
-    @POST
-    public List<ShotResource> retrieveAll(@Valid ShotsGetRequest requestData) {
-        User user = userRepository.findByUsername(requestData.getUsername());
-        if (user == null || !user.checkPassword(requestData.getPassword()))
-            throw new WebApplicationException("Invalid credentials", Response.Status.UNAUTHORIZED);
+    @Context
+    private SecurityContext securityContext;
 
-        List<Shot> shots = shotRepository.findByUser(user);
+    @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<ShotResource> retrieveAll() {
+        // get username and password from {jwt & db}
+        UserPrincipal userPrincipal = (UserPrincipal) securityContext.getUserPrincipal();
+        List<Shot> shots = shotRepository.findByUser(userPrincipal.getName());
         return ShotResource.list(shots);
     }
 
     @Path("/create")
     @POST
-    public ShotResource create(@Valid ShotCreateRequest requestData) {
-        User user = userRepository.findByUsername(requestData.getUsername());
-        if (user == null || !user.checkPassword(requestData.getPassword()))
-            throw new WebApplicationException("Invalid credentials", Response.Status.UNAUTHORIZED);
-
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public ShotResource create(@Valid ShotDTO requestData) {
+        // get username and password from {jwt & db}
+        UserPrincipal userPrincipal = (UserPrincipal) securityContext.getUserPrincipal();
+        User user = userRepository.findByUsername(userPrincipal.getName());
         Shot shot = Shot.builder()
-                .x(requestData.getX())
-                .y(requestData.getY())
-                .r(requestData.getR())
-                .user(user).build();
-        shot = shotRepository.save(shot);
-
-        return new ShotResource(shot);
+            .x(requestData.getX())
+            .y(requestData.getY())
+            .r(requestData.getR())
+            .user(user).build();
+        return new ShotResource(shotRepository.save(shot));
     }
 }

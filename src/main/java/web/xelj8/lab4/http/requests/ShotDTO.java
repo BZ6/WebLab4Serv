@@ -7,7 +7,7 @@ import lombok.Value;
 
 @Value
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ShotCreateRequest {
+public class ShotDTO {
     @NotNull(message = "X must not be null")
     @Digits(integer = 1, fraction = 15, message = "X must be decimal with a maximum of 15 fractional digits and 1 integral digit")
     Double x;
@@ -17,8 +17,4 @@ public class ShotCreateRequest {
     @NotNull(message = "R must not be null")
     @Digits(integer = 1, fraction = 15, message = "R must be decimal with a maximum of 15 fractional digits and 1 integral digit")
     Double r;
-    @NotNull(message = "Username must not be null")
-    String username;
-    @NotNull(message = "Password must not be null")
-    String password;
 }
